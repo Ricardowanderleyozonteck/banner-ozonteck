@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageOps
 import io
 import os
+import urllib.parse
 
 # Configurações de layout e identidade visual do App
 st.set_page_config(
@@ -10,7 +11,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Estilização CSS Customizada - Correção de Contraste e Cores de Texto
+# Estilização CSS Customizada - Inclusão do Botão do WhatsApp e Correções Visuais
 st.markdown("""
     <style>
     /* Alterar cor de fundo geral e fontes */
@@ -75,7 +76,6 @@ st.markdown("""
         color: #000000 !important;
     }
     
-    /* Opções de dentro do menu suspenso continuam pretas para leitura no fundo branco do menu */
     div[role="listbox"] * {
         color: #000000 !important; 
     }
@@ -87,12 +87,39 @@ st.markdown("""
     div[data-testid="stFileUploader"] svg {
         fill: #000000 !important;
     }
+
+    /* ESTILIZAÇÃO DO BOTÃO DO WHATSAPP (VERDE) */
+    .whatsapp-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(90deg, #25D366 0%, #1BD741 100%) !important;
+        color: #ffffff !important;
+        font-weight: bold !important;
+        font-size: 1.1rem !important;
+        text-decoration: none !important;
+        padding: 12px;
+        border-radius: 8px !important;
+        text-align: center;
+        box-shadow: 0px 4px 15px rgba(37, 211, 102, 0.3) !important;
+        transition: all 0.3s ease !important;
+        margin-top: 10px;
+    }
+    .whatsapp-btn:hover {
+        transform: scale(1.02) !important;
+        box-shadow: 0px 6px 20px rgba(37, 211, 102, 0.5) !important;
+        color: #ffffff !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 def process_image(user_img, base_img_path, shift_x, shift_y, zoom_percent):
     base = Image.open(base_img_path).convert("RGBA")
-    user = Image.open(user_img).convert("RGBA")
+    user = Image.open(user_img)
+    
+    # 🔥 CORREÇÃO EXCLUSIVA PARA IPHONE (iOS):
+    # Detecta os metadados de rotação da câmera e corrige a posição física dos pixels
+    user = ImageOps.exif_transpose(user).convert("RGBA")
     
     mask_center_x = 525  
     mask_center_y = 643  
@@ -145,7 +172,6 @@ def process_image(user_img, base_img_path, shift_x, shift_y, zoom_percent):
 # Mapeamento da pasta
 PASTA_BANNERS = os.path.join(os.path.dirname(__file__), "banners")
 
-# ATUALIZADO: "🏆 OZON HAIR SCIENCE" agora aponta para o seu arquivo base original
 MODELOS_DISPONIVEIS = {
     "🏆 OZON HAIR SCIENCE": "banner_base.png",
     "✨ Modelo Reconhecimento Diamante": "banner_modelo2.png",
@@ -203,6 +229,20 @@ if uploaded_file is not None:
             mime="image/jpeg",
             use_container_width=True
         )
+        
+        # --- CONFIGURAÇÃO DO COMPARTILHAMENTO VIA WHATSAPP ---
+        url_do_app = "banner-ozonteck-personalizados.streamlit.app"
+        mensagem_whatsapp = f"Olá! Acabei de criar o meu banner oficial da Ozonteck Ozon Hair Science! Ficou incrível. Crie o seu também agora mesmo pelo celular neste link: {url_do_app}"
+        
+        texto_codificado = urllib.parse.quote(mensagem_whatsapp)
+        link_share_whatsapp = f"wa.me{texto_codificado}"
+        
+        st.markdown(f"""
+            <a href="{link_share_whatsapp}" target="_blank" class="whatsapp-btn">
+                📢 CONVIDAR MINHA EQUIPE VIA WHATSAPP
+            </a>
+        """, unsafe_allow_html=True)
+        
     except FileNotFoundError:
         st.error(f"❌ Arquivo '{nome_arquivo_banner}' ausente na pasta 'banners'.")
     except Exception as e:
